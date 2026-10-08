@@ -88,11 +88,11 @@ impl Node {
             Self::Directory { children, .. } => {
                 for child in children {
                     match child.as_ref() {
-                        Node::Directory { name, .. } => {
+                        Self::Directory { name, .. } => {
                             println!("{}/", name);
                         }
 
-                        Node::File { name } => {
+                        Self::File { name } => {
                             println!("{}", name);
                         }
                     }
@@ -102,6 +102,41 @@ impl Node {
             Self::File { .. } => {
                 println!("not a directory");
             }
+        }
+    }
+
+    fn tree(&self, depth: usize) {
+        let indent = "  ".repeat(depth);
+        println!("{}{}", indent, self.name());
+
+        match self {
+            Self::Directory { children, .. } => {
+                for child in children {
+                    child.tree(depth + 1);
+                }
+            }
+
+            Self::File { .. } => {}
+        }
+    }
+
+    fn find(&self, wanted: &str) -> Option<&Node> {
+        if self.name() == wanted {
+            return Some(self);
+        }
+
+        match self {
+            Self::Directory { children, .. } => {
+                for child in children {
+                    if let Some(result) = child.find(wanted) {
+                        return Some(result);
+                    }
+                }
+
+                None
+            }
+
+            Self::File { .. } => None,
         }
     }
 }
@@ -121,14 +156,21 @@ fn main() {
     ag.add_dir("workspace");
     ag.add_dir("notes");
 
-    ag.ls();
-
     let workspace = ag.child_named_mut("workspace").unwrap();
     workspace.add_file("hello.rs");
 
-    workspace.ls();
+    workspace.add_dir("rust");
+    let rust = workspace.child_named_mut("rust").unwrap();
+    rust.add_dir("src");
+
+    let src = rust.child_named_mut("src").unwrap();
+    src.add_file("main.rs");
+
     let notes = ag.child_named_mut("notes").unwrap();
     notes.add_file("rust.txt");
 
     // println!("{root:#?}");
+    root.tree(0);
+
+    println!("{:#?}", root.find("src"));
 }

@@ -139,6 +139,26 @@ impl Node {
             Self::File { .. } => None,
         }
     }
+
+    fn find_mut(&mut self, wanted: &str) -> Option<&mut Node> {
+        if self.name() == wanted {
+            return Some(self);
+        }
+
+        match self {
+            Self::Directory { children, .. } => {
+                for child in children {
+                    if let Some(result) = child.find_mut(wanted) {
+                        return Some(result);
+                    }
+                }
+
+                None
+            }
+
+            Self::File { .. } => None,
+        }
+    }
 }
 
 fn main() {
@@ -169,8 +189,8 @@ fn main() {
     let notes = ag.child_named_mut("notes").unwrap();
     notes.add_file("rust.txt");
 
-    // println!("{root:#?}");
-    root.tree(0);
+    let src = root.find_mut("src").unwrap();
+    src.add_file("lib.rs");
 
-    println!("{:#?}", root.find("src"));
+    root.tree(0);
 }
